@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0077dd"/>
+      <stop offset="100%" style="stop-color:#0055aa"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="20" fill="url(#bg)"/>
+  
+  <!-- Car icon -->
+  <g transform="translate(24, 20)">
+    <!-- Car body -->
+    <path d="M10 45 L15 30 L65 30 L70 45 L75 45 L75 60 L5 60 L5 45 Z" fill="white"/>
+    <!-- Windows -->
+    <path d="M18 32 L22 42 L38 42 L38 32 Z" fill="#0066cc"/>
+    <path d="M42 32 L42 42 L58 42 L62 32 Z" fill="#0066cc"/>
+    <!-- Wheels -->
+    <circle cx="20" cy="58" r="8" fill="#333"/>
+    <circle cx="20" cy="58" r="4" fill="#666"/>
+    <circle cx="60" cy="58" r="8" fill="#333"/>
+    <circle cx="60" cy="58" r="4" fill="#666"/>
+    <!-- Headlights -->
+    <rect x="5" y="48" width="6" height="4" rx="1" fill="#ffcc00"/>
+    <rect x="69" y="48" width="6" height="4" rx="1" fill="#ffcc00"/>
+  </g>
+  
+  <!-- License plate -->
+  <rect x="24" y="90" width="80" height="24" rx="4" fill="white" stroke="#333" stroke-width="2"/>
+  <text x="64" y="107" font-family="Arial" font-size="12" font-weight="bold" fill="#0066cc" text-anchor="middle">IL VEHICLE</text>
+</svg>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="he" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Israel Vehicle Lookup</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>Israel Vehicle Lookup</h1>
+    </header>
+
+    <!-- Search Section -->
+    <section class="search-section">
+      <label for="license-plate">License Plate:</label>
+      <div class="search-row">
+        <input 
+          type="text" 
+          id="license-plate" 
+          placeholder="e.g., 22821202"
+          maxlength="10"
+          autocomplete="off"
+        >
+        <button id="search-btn" type="button">Search</button>
+      </div>
+    </section>
+
+    <!-- Recent Searches -->
+    <section class="recent-section" id="recent-section" style="display: none;">
+      <label>Recent:</label>
+      <div class="recent-list" id="recent-list"></div>
+    </section>
+
+    <!-- Loading Indicator -->
+    <div class="loading" id="loading" style="display: none;">
+      <div class="spinner"></div>
+      <span>Querying vehicle database...</span>
+    </div>
+
+    <!-- Error Panel -->
+    <div class="panel error-panel" id="error-panel" style="display: none;">
+      <div class="panel-title">Error</div>
+      <div class="panel-content" id="error-message"></div>
+    </div>
+
+    <!-- Not Found Panel -->
+    <div class="panel warning-panel" id="not-found-panel" style="display: none;">
+      <div class="panel-title">Not Found</div>
+      <div class="panel-content" id="not-found-message"></div>
+    </div>
+
+    <!-- Results Section -->
+    <section class="results-section" id="results-section" style="display: none;">
+      
+      <!-- Vehicle Details Table -->
+      <div class="table-container">
+        <h2 class="table-title">Vehicle Registration Details</h2>
+        <table class="data-table" id="vehicle-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="vehicle-tbody">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mileage Loading -->
+      <div class="loading-inline" id="mileage-loading" style="display: none;">
+        <div class="spinner-small"></div>
+        <span>Fetching mileage data...</span>
+      </div>
+
+      <!-- Ownership History Table -->
+      <div class="table-container" id="history-container" style="display: none;">
+        <h2 class="table-title">Ownership History Timeline</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Period Start</th>
+              <th>Period End</th>
+              <th>Owner Type</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- History Loading -->
+      <div class="loading-inline" id="history-loading" style="display: none;">
+        <div class="spinner-small"></div>
+        <span>Fetching ownership history...</span>
+      </div>
+
+    </section>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

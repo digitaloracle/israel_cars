@@ -1,0 +1,387 @@
+/* Israel Vehicle Lookup - Side Panel Styles */
+/* Theme: Blue/Cyan matching Rich terminal output */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  background-color: #1a1a2e;
+  color: #eee;
+  min-width: 320px;
+}
+
+.container {
+  padding: 12px;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #0066cc, #0044aa);
+  color: white;
+  padding: 12px 16px;
+  margin: -12px -12px 12px -12px;
+  text-align: center;
+  border-bottom: 2px solid #00aaff;
+}
+
+.header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Search Section */
+.search-section {
+  margin-bottom: 12px;
+}
+
+.search-section label {
+  display: block;
+  color: #00d4ff;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+}
+
+#license-plate {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #0066cc;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #252545;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#license-plate:focus {
+  border-color: #00aaff;
+  box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.2);
+}
+
+#license-plate::placeholder {
+  color: #666;
+}
+
+#search-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #0066cc, #0055bb);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#search-btn:hover {
+  background: linear-gradient(135deg, #0077dd, #0066cc);
+  transform: translateY(-1px);
+}
+
+#search-btn:active {
+  transform: translateY(0);
+}
+
+#search-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Recent Searches */
+.recent-section {
+  margin-bottom: 12px;
+}
+
+.recent-section label {
+  display: block;
+  color: #888;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.recent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recent-item {
+  background: #252545;
+  border: 1px solid #0066cc;
+  color: #00d4ff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recent-item:hover {
+  background: #0066cc;
+  color: white;
+}
+
+/* Loading Indicator */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  color: #00d4ff;
+}
+
+.loading-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  color: #888;
+  font-size: 12px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #333;
+  border-top-color: #00aaff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #333;
+  border-top-color: #00aaff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Panels (Error, Warning) */
+.panel {
+  border-radius: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.panel-title {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.panel-content {
+  padding: 12px;
+  font-size: 13px;
+}
+
+.error-panel {
+  border: 1px solid #cc3333;
+}
+
+.error-panel .panel-title {
+  background: #cc3333;
+  color: white;
+}
+
+.error-panel .panel-content {
+  background: #2a1a1a;
+  color: #ff6666;
+}
+
+.warning-panel {
+  border: 1px solid #cc9900;
+}
+
+.warning-panel .panel-title {
+  background: #cc9900;
+  color: white;
+}
+
+.warning-panel .panel-content {
+  background: #2a2a1a;
+  color: #ffcc00;
+}
+
+/* Results Section */
+.results-section {
+  margin-top: 12px;
+}
+
+/* Table Container */
+.table-container {
+  margin-bottom: 16px;
+  border: 1px solid #0066cc;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.table-title {
+  background: linear-gradient(135deg, #0066cc, #0055bb);
+  color: white;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+}
+
+/* Data Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table thead {
+  background: #0066cc;
+  color: white;
+}
+
+.data-table th {
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #00aaff;
+}
+
+.data-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #333;
+  vertical-align: top;
+}
+
+.data-table tbody tr:hover {
+  background: #252545;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Field column - cyan labels */
+.data-table td:first-child {
+  color: #00d4ff;
+  font-weight: 500;
+  width: 40%;
+  text-align: right;
+  padding-right: 12px;
+}
+
+/* Value column */
+.data-table td:last-child {
+  color: #fff;
+}
+
+/* RTL Support for Hebrew text */
+.rtl {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Segoe UI', 'Arial Hebrew', Tahoma, sans-serif;
+}
+
+/* Status Colors */
+.status-green {
+  color: #00cc66 !important;
+}
+
+.status-yellow {
+  color: #ffcc00 !important;
+}
+
+.status-red {
+  color: #ff4444 !important;
+}
+
+.status-dim {
+  color: #666 !important;
+  font-style: italic;
+}
+
+/* Current owner highlight */
+.current-owner {
+  color: #00cc66 !important;
+  font-weight: 600;
+}
+
+/* Pollution Scale */
+.pollution-scale {
+  font-size: 11px;
+  letter-spacing: -1px;
+}
+
+.pollution-category {
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.pollution-excellent {
+  color: #00cc66;
+}
+
+.pollution-good {
+  color: #99cc00;
+}
+
+.pollution-fair {
+  color: #ffcc00;
+}
+
+.pollution-moderate {
+  color: #ff9900;
+}
+
+.pollution-poor {
+  color: #ff4444;
+}
+
+/* Ownership History Table specific */
+#history-container .data-table td {
+  text-align: center;
+}
+
+#history-container .data-table td:first-child {
+  width: auto;
+  text-align: center;
+  color: #fff;
+}
+
+#history-container .data-table td:last-child {
+  text-align: left;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0066cc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0077dd;
+}
