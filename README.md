@@ -1,5 +1,7 @@
 # 🚗 Israel Cars - Vehicle Information CLI Tool
 
+![Hand Crafted](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/digitaloracle/israel_cars/master/hand-crafted-stats.json)
+
 A Python CLI tool that queries Israel Government's open data portal (`data.gov.il`) for vehicle registration, ownership history, and mileage data. Features rich terminal output with Hebrew text support and visual pollution scale.
 
 ## Features
