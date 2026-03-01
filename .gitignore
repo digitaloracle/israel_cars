@@ -7,3 +7,10 @@ __pycache__/
 *.pyd
 *.log
 temp_response.json
+
+# Chrome extension build artifacts
+chrome-extension/*.zip
+chrome-extension/screenshot-store.png
+chrome-extension/promo-tile-440x280.png
+chrome-extension/Screenshot*.png
+chrome-extension/Gemini_Generated_Image*.png
