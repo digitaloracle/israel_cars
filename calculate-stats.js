@@ -76,7 +76,8 @@ const shieldsData = {
   schemaVersion: 1,
   label: 'hand crafted',
   message: `${stats.humanPercentage}%`,
-  color: stats.humanPercentage > 80 ? 'green' : stats.humanPercentage > 50 ? 'yellow' : 'orange'
+  color: stats.humanPercentage > 80 ? 'green' : stats.humanPercentage > 50 ? 'yellow' : 'orange',
+  cacheSeconds: 3600
 };
 
 fs.writeFileSync('hand-crafted-stats.json', JSON.stringify(shieldsData, null, 2));
