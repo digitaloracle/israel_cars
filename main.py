@@ -52,12 +52,14 @@ FIELD_NAMES = {
     "rank": "Rank",
 }
 
+DATE_FIELDS = {"mivchan_acharon_dt", "tokef_dt", "moed_aliya_lakvish"}
+
 
 def display_hebrew(text: Optional[str]) -> str:
     """Display Hebrew text correctly with RTL support."""
     if text is None or text == "":
         return "N/A"
-    return get_display(str(text) if text is not None else "")
+    return get_display(str(text))
 
 
 def format_date(date_str: Optional[str]) -> tuple[str, str]:
@@ -68,15 +70,13 @@ def format_date(date_str: Optional[str]) -> tuple[str, str]:
     try:
         date_obj = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")
         formatted = date_obj.strftime("%Y-%m-%d")
-
-        if date_obj < datetime.now():
+        now = datetime.now()
+        if date_obj < now:
             return (formatted, "red")
-        else:
-            days_until = (date_obj - datetime.now()).days
-            if days_until < 30:
-                return (formatted, "yellow")
-            else:
-                return (formatted, "green")
+        days_until = (date_obj - now).days
+        if days_until < 30:
+            return (formatted, "yellow")
+        return (formatted, "green")
     except ValueError:
         return (date_str, "white")
 
@@ -185,15 +185,10 @@ def create_vehicle_table(record: dict, mileage: Optional[int] = None) -> Table:
         "_id",
     ]
 
-    # Add mileage row after year if available
     if mileage is not None:
-        field_name = "Last Reported Mileage"
-        display_value = f"{mileage:,} km"
-        table.add_row(field_name, Text(display_value))
+        table.add_row("Last Reported Mileage", Text(f"{mileage:,} km"))
     else:
-        field_name = "Last Reported Mileage"
-        display_value = "N/A"
-        table.add_row(field_name, Text.from_markup("[dim]N/A[/dim]"))
+        table.add_row("Last Reported Mileage", Text("N/A", style="dim"))
 
     for field_key in field_order:
         if field_key in record:
@@ -201,24 +196,14 @@ def create_vehicle_table(record: dict, mileage: Optional[int] = None) -> Table:
             value = record[field_key]
 
             if value is None or value == "":
-                display_value = "N/A"
-                style = "dim"
+                table.add_row(field_name, Text("N/A", style="dim"))
             elif field_key == "kvutzat_zihum":
-                # Special handling for pollution group with visual scale
-                display_value = create_pollution_scale(value)
-                style = "white"
-            elif "dt" in field_key or field_key in [
-                "mivchan_acharon_dt",
-                "tokef_dt",
-                "moed_aliya_lakvish",
-            ]:
+                table.add_row(field_name, Text.from_markup(create_pollution_scale(value)))
+            elif field_key in DATE_FIELDS:
                 display_value, color = format_date(str(value))
-                style = color
+                table.add_row(field_name, Text(display_value, style=color))
             else:
-                display_value = display_hebrew(str(value))
-                style = "white"
-
-            table.add_row(field_name, Text.from_markup(display_value))
+                table.add_row(field_name, Text(display_hebrew(str(value))))
 
     return table
 

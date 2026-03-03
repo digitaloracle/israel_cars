@@ -254,7 +254,7 @@ function displayVehicleData(record) {
       valueClass = 'status-dim';
     } else if (fieldKey === 'kvutzat_zihum') {
       valueHtml = createPollutionScale(value);
-    } else if (fieldKey === 'mivchan_acharon_dt' || fieldKey === 'tokef_dt') {
+    } else if (fieldKey === 'mivchan_acharon_dt' || fieldKey === 'tokef_dt' || fieldKey === 'moed_aliya_lakvish') {
       const { formatted, colorClass } = formatDate(value);
       valueHtml = formatted;
       valueClass = colorClass;
@@ -279,13 +279,8 @@ function updateMileageRow(mileage) {
   const mileageRow = document.getElementById('mileage-row');
   if (mileageRow) {
     const valueCell = mileageRow.querySelector('td:last-child');
-    if (mileage !== null) {
-      valueCell.textContent = `${mileage.toLocaleString()} km`;
-      valueCell.className = '';
-    } else {
-      valueCell.textContent = 'N/A';
-      valueCell.className = 'status-dim';
-    }
+    valueCell.textContent = `${mileage.toLocaleString()} km`;
+    valueCell.className = '';
   }
 }
 
@@ -299,14 +294,16 @@ function displayOwnershipHistory(records) {
     const isCurrent = isLast && !record.endDate;
 
     const startDate = formatIsraeliDate(record.startDate);
-    const endDate = isCurrent ? 'Present' : formatIsraeliDate(record.endDate);
+    const endDateHtml = isCurrent
+      ? '<span class="status-green">Present</span>'
+      : escapeHtml(formatIsraeliDate(record.endDate));
     const ownerType = record.ownerType || 'Unknown';
 
     const rowClass = isCurrent ? 'current-owner' : '';
 
     row.innerHTML = `
       <td class="${rowClass}">${startDate}</td>
-      <td class="${rowClass}">${isCurrent ? '<span class="status-green">Present</span>' : endDate}</td>
+      <td class="${rowClass}">${endDateHtml}</td>
       <td class="${rowClass} rtl">${escapeHtml(ownerType)}</td>
     `;
     historyTbody.appendChild(row);
