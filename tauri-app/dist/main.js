@@ -92,6 +92,14 @@ function init() {
 
   // Load recent searches
   loadRecentSearches();
+
+  // Custom titlebar controls (no-op in browser dev mode)
+  if (window.__TAURI__) {
+    const appWindow = window.__TAURI__.window.getCurrentWindow();
+    document.getElementById('btn-minimize').addEventListener('click', () => appWindow.minimize());
+    document.getElementById('btn-maximize').addEventListener('click', () => appWindow.toggleMaximize());
+    document.getElementById('btn-close').addEventListener('click', () => appWindow.close());
+  }
 }
 
 // Handle search button click
@@ -272,6 +280,14 @@ function displayVehicleData(record) {
   }
 
   resultsSection.style.display = 'block';
+  resultsSection.classList.remove('animate-in');
+  void resultsSection.offsetWidth; // reflow to restart animation
+  resultsSection.classList.add('animate-in');
+
+  // Stagger row animations
+  Array.from(vehicleTbody.querySelectorAll('tr')).forEach((row, i) => {
+    row.style.animationDelay = (i * 30) + 'ms';
+  });
 }
 
 // Update mileage row after async fetch
@@ -309,6 +325,7 @@ function displayOwnershipHistory(records) {
       <td class="${rowClass}">${isCurrent ? '<span class="status-green">Present</span>' : endDate}</td>
       <td class="${rowClass} rtl">${escapeHtml(ownerType)}</td>
     `;
+    row.style.animationDelay = (index * 30) + 'ms';
     historyTbody.appendChild(row);
   });
 
@@ -432,6 +449,9 @@ function showError(message) {
   hideAllPanels();
   errorMessage.textContent = message;
   errorPanel.style.display = 'block';
+  errorPanel.classList.remove('animate-in');
+  void errorPanel.offsetWidth;
+  errorPanel.classList.add('animate-in');
 }
 
 function showNotFound(licensePlate) {
@@ -439,6 +459,9 @@ function showNotFound(licensePlate) {
   hideAllPanels();
   notFoundMessage.textContent = `No vehicle found with license plate: ${licensePlate}`;
   notFoundPanel.style.display = 'block';
+  notFoundPanel.classList.remove('animate-in');
+  void notFoundPanel.offsetWidth;
+  notFoundPanel.classList.add('animate-in');
 }
 
 // Recent searches — stored in localStorage (sync, no chrome.storage dependency)

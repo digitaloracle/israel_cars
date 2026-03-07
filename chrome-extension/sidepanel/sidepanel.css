@@ -1,5 +1,5 @@
 /* Israel Vehicle Lookup - Side Panel Styles */
-/* Theme: Blue/Cyan matching Rich terminal output */
+/* Theme: Pastel & Rounded */
 
 * {
   box-sizing: border-box;
@@ -10,8 +10,8 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 13px;
-  background-color: #1a1a2e;
-  color: #eee;
+  background-color: #f2f0f7;
+  color: #3b3854;
   min-width: 320px;
 }
 
@@ -21,12 +21,12 @@ body {
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, #0066cc, #0044aa);
+  background: linear-gradient(135deg, #a5b4fc, #c4b5fd);
   color: white;
   padding: 12px 16px;
   margin: -12px -12px 12px -12px;
   text-align: center;
-  border-bottom: 2px solid #00aaff;
+  border-radius: 0 0 20px 20px;
 }
 
 .header h1 {
@@ -42,7 +42,7 @@ body {
 
 .search-section label {
   display: block;
-  color: #00d4ff;
+  color: #9896b4;
   font-weight: 500;
   margin-bottom: 6px;
 }
@@ -55,49 +55,51 @@ body {
 #license-plate {
   flex: 1;
   padding: 10px 12px;
-  border: 2px solid #0066cc;
-  border-radius: 6px;
+  border: 2px solid #e2dff0;
+  border-radius: 12px;
   font-size: 14px;
-  background: #252545;
-  color: #fff;
+  background: #f8f7fc;
+  color: #3b3854;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 #license-plate:focus {
-  border-color: #00aaff;
-  box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.2);
+  border-color: #8b9cf4;
+  box-shadow: 0 0 0 3px rgba(139, 156, 244, 0.3);
 }
 
 #license-plate::placeholder {
-  color: #666;
+  color: #b8b5d0;
 }
 
 #search-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #0066cc, #0055bb);
+  background: linear-gradient(135deg, #8b9cf4, #7b8de8);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 #search-btn:hover {
-  background: linear-gradient(135deg, #0077dd, #0066cc);
+  background: linear-gradient(135deg, #7b8de8, #6b7dd8);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 156, 244, 0.4);
 }
 
 #search-btn:active {
-  transform: translateY(0);
+  transform: scale(0.97);
 }
 
 #search-btn:disabled {
-  background: #444;
+  background: #d0cde8;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* Recent Searches */
@@ -107,7 +109,7 @@ body {
 
 .recent-section label {
   display: block;
-  color: #888;
+  color: #9896b4;
   font-size: 11px;
   margin-bottom: 4px;
 }
@@ -119,19 +121,22 @@ body {
 }
 
 .recent-item {
-  background: #252545;
-  border: 1px solid #0066cc;
-  color: #00d4ff;
-  padding: 4px 10px;
-  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2dff0;
+  color: #8b9cf4;
+  padding: 4px 12px;
+  border-radius: 20px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .recent-item:hover {
-  background: #0066cc;
+  background: #8b9cf4;
   color: white;
+  border-color: #8b9cf4;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(139, 156, 244, 0.35);
 }
 
 /* Loading Indicator */
@@ -141,7 +146,7 @@ body {
   justify-content: center;
   gap: 10px;
   padding: 20px;
-  color: #00d4ff;
+  color: #8b9cf4;
 }
 
 .loading-inline {
@@ -149,15 +154,15 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px;
-  color: #888;
+  color: #9896b4;
   font-size: 12px;
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid #333;
-  border-top-color: #00aaff;
+  border: 3px solid #e2dff0;
+  border-top-color: #8b9cf4;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -165,8 +170,8 @@ body {
 .spinner-small {
   width: 16px;
   height: 16px;
-  border: 2px solid #333;
-  border-top-color: #00aaff;
+  border: 2px solid #e2dff0;
+  border-top-color: #8b9cf4;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -175,11 +180,25 @@ body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* Panels (Error, Warning) */
 .panel {
-  border-radius: 6px;
+  border-radius: 16px;
   margin-bottom: 12px;
   overflow: hidden;
+}
+
+.panel.animate-in {
+  animation: fadeIn 0.25s ease;
 }
 
 .panel-title {
@@ -194,31 +213,31 @@ body {
 }
 
 .error-panel {
-  border: 1px solid #cc3333;
+  border: 1px solid #f4a4a4;
 }
 
 .error-panel .panel-title {
-  background: #cc3333;
+  background: #f4a4a4;
   color: white;
 }
 
 .error-panel .panel-content {
-  background: #2a1a1a;
-  color: #ff6666;
+  background: #fff5f5;
+  color: #c06060;
 }
 
 .warning-panel {
-  border: 1px solid #cc9900;
+  border: 1px solid #f0c96a;
 }
 
 .warning-panel .panel-title {
-  background: #cc9900;
+  background: #f0c96a;
   color: white;
 }
 
 .warning-panel .panel-content {
-  background: #2a2a1a;
-  color: #ffcc00;
+  background: #fffbf0;
+  color: #a07820;
 }
 
 /* Results Section */
@@ -226,16 +245,21 @@ body {
   margin-top: 12px;
 }
 
+.results-section.animate-in {
+  animation: fadeSlideUp 0.3s ease;
+}
+
 /* Table Container */
 .table-container {
   margin-bottom: 16px;
-  border: 1px solid #0066cc;
-  border-radius: 6px;
+  border: 1px solid #e2dff0;
+  border-radius: 16px;
   overflow: hidden;
+  animation: fadeSlideUp 0.35s ease;
 }
 
 .table-title {
-  background: linear-gradient(135deg, #0066cc, #0055bb);
+  background: linear-gradient(135deg, #8b9cf4, #7b8de8);
   color: white;
   padding: 10px 12px;
   font-size: 13px;
@@ -252,34 +276,38 @@ body {
 }
 
 .data-table thead {
-  background: #0066cc;
-  color: white;
+  background: #ede9fe;
+  color: #3b3854;
 }
 
 .data-table th {
   padding: 8px 10px;
   text-align: left;
   font-weight: 600;
-  border-bottom: 2px solid #00aaff;
+  border-bottom: 2px solid #e2dff0;
 }
 
 .data-table td {
   padding: 8px 10px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #ede9fe;
   vertical-align: top;
 }
 
+.data-table tbody tr {
+  animation: fadeIn 0.2s ease both;
+}
+
 .data-table tbody tr:hover {
-  background: #252545;
+  background: #f5f3ff;
 }
 
 .data-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* Field column - cyan labels */
+/* Field column - muted labels */
 .data-table td:first-child {
-  color: #00d4ff;
+  color: #9896b4;
   font-weight: 500;
   width: 40%;
   text-align: right;
@@ -288,7 +316,7 @@ body {
 
 /* Value column */
 .data-table td:last-child {
-  color: #fff;
+  color: #3b3854;
 }
 
 /* RTL Support for Hebrew text */
@@ -300,25 +328,25 @@ body {
 
 /* Status Colors */
 .status-green {
-  color: #00cc66 !important;
+  color: #6aba8f !important;
 }
 
 .status-yellow {
-  color: #ffcc00 !important;
+  color: #d4a843 !important;
 }
 
 .status-red {
-  color: #ff4444 !important;
+  color: #e07878 !important;
 }
 
 .status-dim {
-  color: #666 !important;
+  color: #b8b5d0 !important;
   font-style: italic;
 }
 
 /* Current owner highlight */
 .current-owner {
-  color: #00cc66 !important;
+  color: #6aba8f !important;
   font-weight: 600;
 }
 
@@ -334,23 +362,23 @@ body {
 }
 
 .pollution-excellent {
-  color: #00cc66;
+  color: #6aba8f;
 }
 
 .pollution-good {
-  color: #99cc00;
+  color: #8fba5a;
 }
 
 .pollution-fair {
-  color: #ffcc00;
+  color: #d4a843;
 }
 
 .pollution-moderate {
-  color: #ff9900;
+  color: #d4864a;
 }
 
 .pollution-poor {
-  color: #ff4444;
+  color: #e07878;
 }
 
 /* Ownership History Table specific */
@@ -361,7 +389,7 @@ body {
 #history-container .data-table td:first-child {
   width: auto;
   text-align: center;
-  color: #fff;
+  color: #3b3854;
 }
 
 #history-container .data-table td:last-child {
@@ -374,14 +402,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: #f2f0f7;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #0066cc;
+  background: #c4b5fd;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #0077dd;
+  background: #a5b4fc;
 }

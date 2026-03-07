@@ -8,9 +8,14 @@
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
-    <header class="header">
+    <!-- Header (also acts as custom titlebar drag region) -->
+    <header class="header" data-tauri-drag-region>
       <h1>Israel Vehicle Lookup</h1>
+      <div class="titlebar-controls">
+        <button class="tb-btn tb-minimize" id="btn-minimize" title="Minimize">&#8211;</button>
+        <button class="tb-btn tb-maximize" id="btn-maximize" title="Maximize">&#9633;</button>
+        <button class="tb-btn tb-close"    id="btn-close"    title="Close">&#10005;</button>
+      </div>
     </header>
 
     <!-- Search Section -->
