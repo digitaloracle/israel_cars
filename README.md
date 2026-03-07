@@ -2,7 +2,7 @@
 
 ![Hand Crafted](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/digitaloracle/israel_cars/master/hand-crafted-stats.json&cacheSeconds=300)
 
-A Python CLI tool that queries Israel Government's open data portal (`data.gov.il`) for vehicle registration, ownership history, and mileage data. Features rich terminal output with Hebrew text support and visual pollution scale.
+Query Israel Government's open data portal (`data.gov.il`) for vehicle registration, ownership history, and mileage data. Available as a Python CLI, Chrome extension, and Windows desktop app.
 
 ## Features
 
@@ -15,35 +15,27 @@ A Python CLI tool that queries Israel Government's open data portal (`data.gov.i
 
 ## Quick Start
 
-### Installation
+### Option 1: Windows Desktop App
+
+Download `israeli_cars.exe` from the [Releases](https://github.com/digitaloracle/israel_cars/releases) page and run it — no installation required.
+
+### Option 2: Chrome Extension
+
+Load `chrome-extension/` as an unpacked extension in Chrome (`chrome://extensions` → Developer mode → Load unpacked). Opens as a side panel on the toolbar.
+
+### Option 3: Python CLI
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/israel_cars.git
+# Clone and install dependencies
+git clone https://github.com/digitaloracle/israel_cars.git
 cd israel_cars
-
-# Create virtual environment (optional but recommended)
-python -m venv .venv
-
-# Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# Linux/Mac:
-source .venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-```
 
-### Basic Usage
-
-```bash
 # Query vehicle by license plate
 python main.py 11111111
 
-# Query with ownership history
-python main.py 11111111 --history
-python main.py 11111111 -H  # Short flag
+# With ownership history
+python main.py 11111111 --history  # or -H
 ```
 
 ## Example Output

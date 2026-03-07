@@ -198,13 +198,26 @@ Define at module level after imports:
   - `fix: resolve type errors in display_hebrew`
   - `docs: update API endpoints in AGENTS.md`
 
+## Tauri Desktop App (`tauri-app/`)
+
+A native Windows desktop app wrapping the same vehicle lookup UI.
+
+- **Stack:** Tauri v2, plain HTML/CSS/JS (no bundler), Rust backend
+- **Frontend:** `tauri-app/dist/` — `index.html`, `main.js`, `styles.css`
+- **Config:** `tauri-app/src-tauri/tauri.conf.json` — `frontendDist` points to `../dist`
+- **Dev:** `export PATH="/c/Users/digit/.cargo/bin:$PATH" && cd tauri-app && npm run dev`
+- **Build:** `npm run build` from `tauri-app/` — outputs `src-tauri/target/release/israel-cars.exe`
+- **CI:** `.github/workflows/build-tauri.yml` — triggers on changes to `tauri-app/**`, publishes `israeli_cars.exe` to GitHub Releases
+
 ## Key Files
 
-- `main.py` (471 lines) - Main CLI application
-- `requirements.txt` - Python dependencies (14 packages)
-- `AGENTS.md` - This development guide
-- `test_search.py` - Exploratory API testing script
-- `*.json` - Sample API responses for reference
+- `main.py` — Python CLI application
+- `requirements.txt` — Python dependencies
+- `chrome-extension/` — Manifest V3 browser side-panel extension
+- `tauri-app/` — Tauri v2 desktop app (Windows)
+- `tauri-app/dist/` — Frontend HTML/JS/CSS served by Tauri
+- `AGENTS.md` — This development guide
+- `*.json` — Sample API responses for reference
 
 **Note:** No pyproject.toml, setup.py, or complex configuration. Keep it simple.
 
