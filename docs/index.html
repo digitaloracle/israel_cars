@@ -30,7 +30,17 @@
     <li>Pollution group with visual scale</li>
     <li>Inspection &amp; registration expiry dates with color coding</li>
     <li>Recent searches saved locally</li>
+    <li>Select a region on any page to extract a license plate number automatically — powered by an on-device AI model (SmolVLM-500M), no data ever leaves your machine</li>
   </ul>
+
+  <h2 style="font-size:1.1rem;margin-top:2em;">What's new in v1.2.0</h2>
+  <p>
+    Plate recognition now runs fully on-device via WebGPU using
+    <a href="https://huggingface.co/HuggingFaceTB/SmolVLM-500M-Instruct">SmolVLM-500M</a>
+    (~500 MB, downloaded once and cached locally). Just click "Select region from page",
+    drag over a plate in any photo on the page, and the number is filled in automatically.
+    No upload, no server, no API key.
+  </p>
 
   <p>
     <a href="https://github.com/digitaloracle/israel_cars">View source on GitHub</a> ·
