@@ -8,6 +8,7 @@ const MODEL_ID = 'HuggingFaceTB/SmolVLM-500M-Instruct';
 let processor = null;
 let model = null;
 let loadPromise = null;
+let inferencePromise = null; // serializes concurrent OCR requests
 
 // ─── Message entry point ──────────────────────────────────────────────────────
 
@@ -60,6 +61,15 @@ function ensureModelLoaded() {
 // ─── Inference ────────────────────────────────────────────────────────────────
 
 async function runOcr(dataUrl) {
+  // ONNX Runtime rejects concurrent generate() calls with "Session already started".
+  // Chain requests so each waits for the previous to finish.
+  const result = (inferencePromise = (inferencePromise ?? Promise.resolve()).then(
+    () => _runOcrInner(dataUrl)
+  ));
+  return result;
+}
+
+async function _runOcrInner(dataUrl) {
   await ensureModelLoaded();
 
   const { RawImage } = await import(chrome.runtime.getURL('lib/transformers.min.js'));
