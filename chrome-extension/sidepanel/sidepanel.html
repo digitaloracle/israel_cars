@@ -17,9 +17,9 @@
     <section class="search-section">
       <label for="license-plate">License Plate:</label>
       <div class="search-row">
-        <input 
-          type="text" 
-          id="license-plate" 
+        <input
+          type="text"
+          id="license-plate"
           placeholder="e.g., 22821202"
           maxlength="10"
           autocomplete="off"
@@ -27,6 +27,20 @@
         <button id="search-btn" type="button">Search</button>
       </div>
     </section>
+
+    <!-- Image OCR Section -->
+    <section class="image-section">
+      <button id="select-region-btn" type="button" class="select-region-btn">
+        Select region from page
+        <span class="experimental-badge">experimental</span>
+      </button>
+    </section>
+
+    <!-- OCR Status -->
+    <div class="loading-inline ocr-status" id="ocr-status" style="display: none;">
+      <div class="spinner-small"></div>
+      <span id="ocr-status-text">Loading OCR model...</span>
+    </div>
 
     <!-- Recent Searches -->
     <section class="recent-section" id="recent-section" style="display: none;">
@@ -54,7 +68,7 @@
 
     <!-- Results Section -->
     <section class="results-section" id="results-section" style="display: none;">
-      
+
       <!-- Vehicle Details Table -->
       <div class="table-container">
         <h2 class="table-title">Vehicle Registration Details</h2>

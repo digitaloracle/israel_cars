@@ -92,30 +92,6 @@ function init() {
     if (e.key === 'Enter') handleSearch();
   });
 
-  // Image file input
-  const imageFileInput = document.getElementById('image-file-input');
-  imageFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) handleImageFileOcr(file);
-    e.target.value = ''; // reset so same file can be re-selected
-  });
-
-  // Drag-and-drop on the drop zone
-  const dropZone = document.getElementById('image-drop-zone');
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('drag-over');
-  });
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) handleImageFileOcr(file);
-  });
-
   // Region selector
   document.getElementById('select-region-btn').addEventListener('click', startRegionSelection);
 

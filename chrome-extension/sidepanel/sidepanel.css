@@ -102,6 +102,111 @@ body {
   box-shadow: none;
 }
 
+/* Image OCR Section */
+.image-section {
+  margin-bottom: 12px;
+}
+
+.image-section > label {
+  display: block;
+  color: #9896b4;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.image-drop-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 2px dashed #c4b5fd;
+  border-radius: 12px;
+  background: #f8f7fc;
+  color: #9896b4;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.image-drop-zone.drag-over {
+  border-color: #8b9cf4;
+  background: #ede9fe;
+  color: #3b3854;
+}
+
+.drop-hint {
+  flex: 1;
+}
+
+.browse-btn {
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #8b9cf4, #7b8de8);
+  color: white;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.browse-btn:hover {
+  background: linear-gradient(135deg, #7b8de8, #6b7dd8);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(139, 156, 244, 0.35);
+}
+
+.select-region-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #c4b5fd, #a5b4fc);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.experimental-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.select-region-btn:hover {
+  background: linear-gradient(135deg, #b39bf8, #8b9cf4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 156, 244, 0.4);
+}
+
+.select-region-btn:active {
+  transform: scale(0.97);
+}
+
+
+.ocr-hint {
+  color: #b8b5d0;
+  font-size: 11px;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+.ocr-status {
+  margin-bottom: 8px;
+}
+
 /* Recent Searches */
 .recent-section {
   margin-bottom: 12px;
