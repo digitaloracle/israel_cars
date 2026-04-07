@@ -1,15 +1,23 @@
 {
   "manifest_version": 3,
   "name": "Israel Vehicle Lookup",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Query Israeli vehicle registration, mileage, and ownership history from data.gov.il",
   "permissions": [
     "sidePanel",
-    "storage"
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting",
+    "offscreen"
   ],
   "host_permissions": [
-    "https://data.gov.il/*"
+    "https://data.gov.il/*",
+    "<all_urls>"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src https://data.gov.il https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net"
+  },
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
@@ -28,5 +36,11 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/*", "offscreen/offscreen.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
