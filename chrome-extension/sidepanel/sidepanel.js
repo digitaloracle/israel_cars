@@ -194,11 +194,24 @@ async function _sendOcrRequest(dataUrl) {
 
 function showOcrStatus(message) {
   document.getElementById('ocr-status-text').textContent = message;
-  document.getElementById('ocr-status').style.display = 'flex';
+  document.getElementById('ocr-status').style.display = 'block';
+
+  // Parse percentage from messages like "Downloading model: foo.bin — 45%"
+  const fill = document.getElementById('ocr-progress-fill');
+  const pctMatch = message.match(/(\d+)%/);
+  if (pctMatch) {
+    fill.classList.remove('indeterminate');
+    fill.style.width = `${pctMatch[1]}%`;
+  } else {
+    fill.classList.add('indeterminate');
+  }
 }
 
 function hideOcrStatus() {
   document.getElementById('ocr-status').style.display = 'none';
+  const fill = document.getElementById('ocr-progress-fill');
+  fill.classList.remove('indeterminate');
+  fill.style.width = '0%';
 }
 
 // --- Region selector (content script overlay → service worker screenshot → crop → OCR) ---
