@@ -16,7 +16,7 @@
     "<all_urls>"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src https://data.gov.il https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src https://data.gov.il https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net data:"
   },
   "action": {
     "default_icon": {
