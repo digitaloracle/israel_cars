@@ -63,6 +63,8 @@ let notFoundPanel, notFoundMessage, resultsSection, vehicleTbody;
 let mileageLoading, historyContainer, historyTbody, historyLoading;
 let recentSection, recentList;
 
+
+
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', init);
 
@@ -90,8 +92,170 @@ function init() {
     if (e.key === 'Enter') handleSearch();
   });
 
+  // Image file input
+  const imageFileInput = document.getElementById('image-file-input');
+  imageFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleImageFileOcr(file);
+    e.target.value = ''; // reset so same file can be re-selected
+  });
+
+  // Drag-and-drop on the drop zone
+  const dropZone = document.getElementById('image-drop-zone');
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleImageFileOcr(file);
+  });
+
+  // Region selector
+  document.getElementById('select-region-btn').addEventListener('click', startRegionSelection);
+
+  // Messages from service worker (region selection result)
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'cropAndOcr') {
+      handleCropAndOcr(message.dataUrl, message.rect, message.devicePixelRatio);
+    } else if (message.action === 'regionCancelled') {
+      hideOcrStatus();
+    } else if (message.action === 'regionError') {
+      hideOcrStatus();
+      showError(`Region selection error: ${message.error}`);
+    } else if (message.action === 'ocrProgress') {
+      showOcrStatus(message.text);
+    }
+  });
+
   // Load recent searches
   loadRecentSearches();
+}
+
+// --- Detection + OCR functions ---
+
+// Convert a blob/remote URL to a data URL via canvas.
+// Blob URLs are context-local; data URLs can cross extension contexts.
+// Images are capped at 1024px longest dimension — sufficient for SmolVLM.
+async function _toDataUrl(srcUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_DIM = 1024;
+      const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * scale);
+      const h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', 0.92);
+    };
+    img.onerror = reject;
+    img.src = srcUrl;
+  });
+}
+
+async function handleImageFileOcr(file) {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    showOcrStatus('Preparing image…');
+    const dataUrl = await _toDataUrl(objectUrl);
+    await _sendOcrRequest(dataUrl);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function handleImageOcr(imageUrl) {
+  showOcrStatus('Preparing image…');
+  const dataUrl = imageUrl.startsWith('data:') ? imageUrl : await _toDataUrl(imageUrl);
+  await _sendOcrRequest(dataUrl);
+}
+
+async function _sendOcrRequest(dataUrl) {
+  showOcrStatus('Loading OCR model…');
+  let result;
+  try {
+    result = await chrome.runtime.sendMessage({ action: 'ocrRequest', dataUrl });
+  } catch (err) {
+    hideOcrStatus();
+    showError(`OCR communication error: ${err.message}`);
+    return;
+  }
+
+  hideOcrStatus();
+
+  if (!result?.success) {
+    showError(`OCR error: ${result?.error ?? 'Unknown error'}`);
+    return;
+  }
+
+  // Extract 7–8 digit Israeli plate number from model output.
+  const raw = result.text ?? '';
+  const match = raw.replace(/\D/g, '').match(/\d{7,8}/);
+  if (match) {
+    licensePlateInput.value = match[0];
+    handleSearch();
+  } else {
+    showError(
+      raw.trim()
+        ? `Plate not recognised (model returned: "${raw.trim().slice(0, 40)}")`
+        : 'No license plate detected. Try a clearer or closer photo.'
+    );
+  }
+}
+
+function showOcrStatus(message) {
+  document.getElementById('ocr-status-text').textContent = message;
+  document.getElementById('ocr-status').style.display = 'flex';
+}
+
+function hideOcrStatus() {
+  document.getElementById('ocr-status').style.display = 'none';
+}
+
+// --- Region selector (content script overlay → service worker screenshot → crop → OCR) ---
+
+function startRegionSelection() {
+  showOcrStatus('Drag over the license plate on the page…');
+  chrome.runtime.sendMessage({ action: 'startRegionSelection' });
+}
+
+async function handleCropAndOcr(dataUrl, rect, dpr) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = async () => {
+      const x = Math.round(rect.x * dpr);
+      const y = Math.round(rect.y * dpr);
+      const w = Math.round(rect.w * dpr);
+      const h = Math.round(rect.h * dpr);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, x, y, w, h, 0, 0, w, h);
+      // toDataURL avoids blob URL cross-context issues.
+      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      try {
+        await _sendOcrRequest(croppedDataUrl);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
 }
 
 // Handle search button click
