@@ -32,6 +32,7 @@ files = [
     "utils/api-cache.js",
     "utils/fetch-utils.js",
     "utils/offscreen-manager.js",
+    "utils/price-utils.js",
     "lib/transformers.min.js",
     "lib/ort-wasm-simd-threaded.jsep.mjs",
     "lib/ort-wasm-simd-threaded.jsep.wasm",

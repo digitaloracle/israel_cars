@@ -6,7 +6,8 @@ const BASE_URL = 'https://data.gov.il/api/3/action/datastore_search';
 const RESOURCE_IDS = {
   vehicle: '053cea08-09bc-40ec-8f7a-156f0677aff3',
   history: 'bb2355dc-9ec7-4f06-9c3f-3344672171da',
-  mileage: '56063a99-8a3e-4ff4-912e-5966c0279bad'
+  mileage: '56063a99-8a3e-4ff4-912e-5966c0279bad',
+  price:   '39f455bf-6db0-4926-859d-017f34eacbcb'
 };
 
 // Field name mappings (API field -> Display name)
@@ -61,6 +62,7 @@ const MAX_RECENT_SEARCHES = 5;
 let licensePlateInput, searchBtn, loadingEl, errorPanel, errorMessage;
 let notFoundPanel, notFoundMessage, resultsSection, vehicleTbody;
 let mileageLoading, historyContainer, historyTbody, historyLoading;
+let priceContainer;
 let recentSection, recentList;
 
 
@@ -83,6 +85,7 @@ function init() {
   historyContainer = document.getElementById('history-container');
   historyTbody = document.getElementById('history-tbody');
   historyLoading = document.getElementById('history-loading');
+  priceContainer = document.getElementById('price-container');
   recentSection = document.getElementById('recent-section');
   recentList = document.getElementById('recent-list');
 
@@ -299,13 +302,14 @@ async function handleSearch() {
     // Save to recent searches
     saveRecentSearch(licensePlate);
 
-    // Fetch mileage and history in parallel (always fresh)
+    // Fetch mileage, history, and original price in parallel (always fresh)
     mileageLoading.style.display = 'flex';
     historyLoading.style.display = 'flex';
 
-    const [mileage, history] = await Promise.all([
+    const [mileage, history, newPrice] = await Promise.all([
       fetchMileageData(licensePlate),
-      fetchOwnershipHistory(licensePlate)
+      fetchOwnershipHistory(licensePlate),
+      fetchNewPrice(vehicleData)
     ]);
 
     // Update mileage in table
@@ -318,6 +322,12 @@ async function handleSearch() {
     historyLoading.style.display = 'none';
     if (history && history.length > 0) {
       displayOwnershipHistory(history);
+    }
+
+    // Display original price + depreciation chart
+    updatePriceRow(newPrice);
+    if (newPrice !== null) {
+      displayPriceInfo(newPrice, vehicleData.shnat_yitzur);
     }
 
   } catch (error) {
@@ -407,6 +417,117 @@ async function fetchOwnershipHistory(licensePlate) {
   }
 }
 
+// Fetch original new-car price from the MOT importers dataset
+async function fetchNewPrice(record) {
+  try {
+    const { tozeret_cd, degem_cd, shnat_yitzur } = record || {};
+    if (!tozeret_cd || !degem_cd || !shnat_yitzur) return null;
+
+    const url = new URL(BASE_URL);
+    url.searchParams.set('resource_id', RESOURCE_IDS.price);
+    url.searchParams.set('filters', JSON.stringify({ tozeret_cd, degem_cd, shnat_yitzur }));
+    url.searchParams.set('limit', '1');
+
+    const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
+    const data = await response.json();
+
+    if (!data.success) return null;
+    const records = data.result?.records || [];
+    if (records.length === 0) return null;
+
+    const mehir = records[0].mehir;
+    return (mehir !== null && mehir !== undefined && mehir !== '') ? Number(mehir) : null;
+  } catch (error) {
+    console.error('Error fetching new price:', error);
+    return null;
+  }
+}
+
+// Update the original price table row after async fetch
+function updatePriceRow(price) {
+  const row = document.getElementById('price-row');
+  if (!row) return;
+  const cell = row.querySelector('td:last-child');
+  if (price !== null) {
+    cell.textContent = `₪${Math.round(price).toLocaleString()}`;
+    cell.className = '';
+  } else {
+    cell.textContent = 'Not available';
+    cell.className = 'status-dim';
+  }
+}
+
+// Render original price summary + year-by-year depreciation bar chart
+function displayPriceInfo(originalPrice, shnat_yitzur) {
+  const manufactureYear = parseInt(shnat_yitzur, 10);
+  const currentYear = new Date().getFullYear();
+  const timeline = calculateDepreciationTimeline(originalPrice, manufactureYear, currentYear);
+  if (!timeline.length) return;
+
+  const current = timeline[timeline.length - 1];
+  const pctNow = Math.round(current.pctOfOriginal);
+  const estNow = current.value;
+  const ageYrs = current.age;
+
+  // Summary line
+  const summaryEl = document.getElementById('price-summary');
+  const pctClass = pctNow >= 40 ? 'status-yellow' : 'status-red';
+  summaryEl.textContent = '';
+
+  const line1 = document.createElement('span');
+  line1.textContent = `New (${manufactureYear}): ₪${Math.round(originalPrice).toLocaleString()}`;
+  summaryEl.appendChild(line1);
+  summaryEl.appendChild(document.createElement('br'));
+
+  const line2 = document.createElement('span');
+  line2.textContent = `Est. now (${currentYear}, ${ageYrs} yrs): ₪${estNow.toLocaleString()} `;
+  summaryEl.appendChild(line2);
+
+  const pctSpan = document.createElement('span');
+  pctSpan.className = pctClass;
+  pctSpan.textContent = `(~${pctNow}% of original)`;
+  summaryEl.appendChild(pctSpan);
+
+  // Bar chart — one row per year
+  const chartEl = document.getElementById('price-chart');
+  chartEl.textContent = '';
+
+  timeline.forEach(entry => {
+    const pct = Math.round(entry.pctOfOriginal);
+    const colorClass = pct >= 70 ? 'dep-high' : pct >= 40 ? 'dep-mid' : pct >= 20 ? 'dep-low' : 'dep-vlow';
+
+    const row = document.createElement('div');
+    row.className = entry.isCurrent ? 'dep-row dep-current' : 'dep-row';
+
+    const yearSpan = document.createElement('span');
+    yearSpan.className = 'dep-year';
+    yearSpan.textContent = entry.year;
+
+    const track = document.createElement('div');
+    track.className = 'dep-track';
+    const fill = document.createElement('div');
+    fill.className = `dep-fill ${colorClass}`;
+    fill.style.width = `${pct}%`;
+    track.appendChild(fill);
+
+    const pctSpan = document.createElement('span');
+    pctSpan.className = 'dep-pct';
+    pctSpan.textContent = `${pct}%`;
+
+    const dropSpan = document.createElement('span');
+    dropSpan.className = 'dep-drop';
+    dropSpan.textContent = entry.age > 0 ? `-${Math.round(entry.annualDropPct)}%/yr` : 'new';
+
+    row.appendChild(yearSpan);
+    row.appendChild(track);
+    row.appendChild(pctSpan);
+    row.appendChild(dropSpan);
+    chartEl.appendChild(row);
+  });
+
+  priceContainer.style.display = 'block';
+}
+
 // Display vehicle data in table
 function displayVehicleData(record) {
   vehicleTbody.innerHTML = '';
@@ -419,6 +540,18 @@ function displayVehicleData(record) {
     <td class="status-dim">Loading...</td>
   `;
   vehicleTbody.appendChild(mileageRow);
+
+  // Add original price placeholder row
+  const priceRow = document.createElement('tr');
+  priceRow.id = 'price-row';
+  const priceLabelTd = document.createElement('td');
+  priceLabelTd.textContent = 'Original New Price';
+  const priceValueTd = document.createElement('td');
+  priceValueTd.className = 'status-dim';
+  priceValueTd.textContent = 'Loading...';
+  priceRow.appendChild(priceLabelTd);
+  priceRow.appendChild(priceValueTd);
+  vehicleTbody.appendChild(priceRow);
 
   // Add vehicle fields
   for (const fieldKey of FIELD_ORDER) {
@@ -610,6 +743,7 @@ function hideAllPanels() {
   notFoundPanel.style.display = 'none';
   resultsSection.style.display = 'none';
   historyContainer.style.display = 'none';
+  priceContainer.style.display = 'none';
   mileageLoading.style.display = 'none';
   historyLoading.style.display = 'none';
 }

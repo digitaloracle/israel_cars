@@ -124,11 +124,19 @@
         <span>Fetching ownership history...</span>
       </div>
 
+      <!-- Price Depreciation Section -->
+      <div class="table-container" id="price-container" style="display: none;">
+        <h2 class="table-title">Price Depreciation</h2>
+        <div class="price-summary" id="price-summary"></div>
+        <div class="dep-chart" id="price-chart"></div>
+      </div>
+
     </section>
   </div>
 
   <script src="../utils/api-cache.js"></script>
   <script src="../utils/fetch-utils.js"></script>
+  <script src="../utils/price-utils.js"></script>
   <script src="sidepanel.js"></script>
 </body>
 </html>
