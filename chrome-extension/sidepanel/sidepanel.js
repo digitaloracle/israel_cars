@@ -92,6 +92,20 @@ function init() {
     if (e.key === 'Enter') handleSearch();
   });
 
+  // Dealer filter toggle
+  const filterBtn = document.getElementById('dealer-filter-btn');
+  chrome.storage.local.get('dealerFilterEnabled', ({ dealerFilterEnabled }) => {
+    _setFilterBtn(filterBtn, !!dealerFilterEnabled);
+  });
+  filterBtn.addEventListener('click', () => {
+    chrome.storage.local.get('dealerFilterEnabled', ({ dealerFilterEnabled }) => {
+      const next = !dealerFilterEnabled;
+      chrome.storage.local.set({ dealerFilterEnabled: next });
+      _setFilterBtn(filterBtn, next);
+      chrome.runtime.sendMessage({ action: 'setDealerFilter', enabled: next });
+    });
+  });
+
   // Region selector
   document.getElementById('select-region-btn').addEventListener('click', startRegionSelection);
 
@@ -111,6 +125,11 @@ function init() {
 
   // Load recent searches
   loadRecentSearches();
+}
+
+function _setFilterBtn(btn, enabled) {
+  btn.classList.toggle('active', enabled);
+  document.getElementById('dealer-filter-label').textContent = enabled ? 'Dealer ads hidden' : 'Hide dealer ads';
 }
 
 // --- Detection + OCR functions ---
@@ -250,7 +269,7 @@ async function handleCropAndOcr(dataUrl, rect, dpr) {
 // Handle search button click
 async function handleSearch() {
   const licensePlate = licensePlateInput.value.trim();
-  
+
   if (!licensePlate) {
     showError('Please enter a license plate number.');
     return;
@@ -262,22 +281,25 @@ async function handleSearch() {
   searchBtn.disabled = true;
 
   try {
-    // Fetch vehicle data first (required)
-    const vehicleData = await fetchVehicleData(licensePlate);
-    
+    // P1: use cached vehicle data if available (24-hour TTL)
+    const cached = await getCachedData(licensePlate);
+    const vehicleData = cached ?? await fetchVehicleData(licensePlate);
+
     if (!vehicleData) {
       showNotFound(licensePlate);
       return;
     }
 
+    if (!cached) await setCachedData(licensePlate, vehicleData);
+
     // Show vehicle data immediately
     showLoading(false);
     displayVehicleData(vehicleData);
-    
+
     // Save to recent searches
     saveRecentSearch(licensePlate);
 
-    // Fetch mileage and history in parallel (progressive loading)
+    // Fetch mileage and history in parallel (always fresh)
     mileageLoading.style.display = 'flex';
     historyLoading.style.display = 'flex';
 
@@ -299,7 +321,12 @@ async function handleSearch() {
     }
 
   } catch (error) {
-    showError(`Network error: ${error.message}`);
+    // P2: surface timeout errors with an actionable message
+    if (error.name === 'AbortError') {
+      showError('Request timed out — the government API is slow. Please try again.');
+    } else {
+      showError(`Network error: ${error.message}`);
+    }
   } finally {
     searchBtn.disabled = false;
     showLoading(false);
@@ -313,7 +340,8 @@ async function fetchVehicleData(licensePlate) {
   url.searchParams.set('q', licensePlate);
   url.searchParams.set('limit', '1');
 
-  const response = await fetch(url);
+  // P2: 10-second timeout, one automatic retry on network failure
+  const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
   const data = await response.json();
 
   if (!data.success) return null;
@@ -330,7 +358,7 @@ async function fetchMileageData(licensePlate) {
     url.searchParams.set('q', licensePlate);
     url.searchParams.set('limit', '1');
 
-    const response = await fetch(url);
+    const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
     const data = await response.json();
 
     if (!data.success) return null;
@@ -356,7 +384,7 @@ async function fetchOwnershipHistory(licensePlate) {
     url.searchParams.set('q', licensePlate);
     url.searchParams.set('limit', '100');
 
-    const response = await fetch(url);
+    const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
     const data = await response.json();
 
     if (!data.success) return null;

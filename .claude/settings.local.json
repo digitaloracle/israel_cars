@@ -1,7 +1,27 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(python3:*)",
+      "Bash(gh workflow:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(chmod +x:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:cdn.jsdelivr.net)",
+      "WebFetch(domain:developer.chrome.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "Bash(curl -s \"https://huggingface.co/docs/transformers.js/en/api/utils/tensor\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git:*)",
+      "mcp__plugin_cq_cq__status",
+      "mcp__plugin_cq_cq__propose",
+      "Bash(sed 's/\\\\r//' package.sh)",
+      "Bash(bash /tmp/package_clean.sh)"
     ]
   }
 }
