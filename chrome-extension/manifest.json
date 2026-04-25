@@ -6,7 +6,6 @@
   "permissions": [
     "sidePanel",
     "storage",
-    "tabs",
     "activeTab",
     "scripting",
     "offscreen"
@@ -16,7 +15,7 @@
     "<all_urls>"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src https://data.gov.il https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net data:"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src https://data.gov.il https://www.yad2.co.il https://gw.yad2.co.il https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net data:"
   },
   "action": {
     "default_icon": {

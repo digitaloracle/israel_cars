@@ -24,6 +24,7 @@ $files = @(
   'utils/fetch-utils.js',
   'utils/offscreen-manager.js',
   'utils/price-utils.js',
+  'utils/yad2-utils.js',
   'icons/icon16.png',
   'icons/icon48.png',
   'icons/icon128.png'

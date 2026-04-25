@@ -241,6 +241,7 @@ function hideOcrStatus() {
 function startRegionSelection() {
   showOcrStatus('Drag over the license plate on the page…');
   chrome.runtime.sendMessage({ action: 'startRegionSelection' });
+  chrome.runtime.sendMessage({ action: 'warmupOcr' });
 }
 
 async function handleCropAndOcr(dataUrl, rect, dpr) {
@@ -302,14 +303,13 @@ async function handleSearch() {
     // Save to recent searches
     saveRecentSearch(licensePlate);
 
-    // Fetch mileage, history, and original price in parallel (always fresh)
+    // Fetch mileage and history in parallel — these are fast and unblock the UI immediately
     mileageLoading.style.display = 'flex';
     historyLoading.style.display = 'flex';
 
-    const [mileage, history, newPrice] = await Promise.all([
+    const [mileage, history] = await Promise.all([
       fetchMileageData(licensePlate),
-      fetchOwnershipHistory(licensePlate),
-      fetchNewPrice(vehicleData)
+      fetchOwnershipHistory(licensePlate)
     ]);
 
     // Update mileage in table
@@ -324,11 +324,36 @@ async function handleSearch() {
       displayOwnershipHistory(history);
     }
 
-    // Display original price + depreciation chart
-    updatePriceRow(newPrice);
-    if (newPrice !== null) {
-      displayPriceInfo(newPrice, vehicleData.shnat_yitzur);
-    }
+    // Fetch original price then Yad2 market data in background (price API can be slow)
+    fetchNewPrice(vehicleData).then(newPrice => {
+      updatePriceRow(newPrice);
+      if (newPrice === null) return;
+      displayPriceInfo(newPrice, vehicleData.shnat_yitzur, null);
+      // Show loading hint while Yad2 data is in flight
+      const summaryEl = document.getElementById('price-summary');
+      const loadingNote = document.createElement('span');
+      loadingNote.id = 'yad2-loading-note';
+      loadingNote.className = 'status-dim';
+      loadingNote.textContent = ' · Fetching market prices…';
+      summaryEl.appendChild(loadingNote);
+
+      fetchYad2CurrentPrice(vehicleData).then(yad2Data => {
+        const note = document.getElementById('yad2-loading-note');
+        if (note) note.remove();
+        if (yad2Data) {
+          displayPriceInfo(newPrice, vehicleData.shnat_yitzur, yad2Data);
+        } else {
+          console.warn('[Yad2] returned null — model or manufacturer not found on Yad2');
+        }
+      }).catch(err => {
+        const note = document.getElementById('yad2-loading-note');
+        if (note) note.remove();
+        console.error('[Yad2] fetchYad2CurrentPrice failed:', err);
+      });
+    }).catch(err => {
+      console.error('Error fetching new price:', err);
+      updatePriceRow(null);
+    });
 
   } catch (error) {
     // P2: surface timeout errors with an actionable message
@@ -443,6 +468,21 @@ async function fetchNewPrice(record) {
   }
 }
 
+// Fetch current market price from Yad2 for the vehicle's manufacture year.
+// e.g. a 2013 A3 → searches year=2013-2013 → what 2013 A3s sell for today.
+async function fetchYad2CurrentPrice(vehicleData) {
+  try {
+    const modelName = vehicleData.kinuy_mishari || vehicleData.degem_nm;
+    const ids = await fetchYad2Ids(vehicleData.tozeret_nm, modelName);
+    if (!ids || !ids.modelId) return null;
+
+    const year = parseInt(vehicleData.shnat_yitzur, 10);
+    return await fetchYad2MarketPriceForYear(ids.manufacturerId, ids.modelId, year);
+  } catch {
+    return null;
+  }
+}
+
 // Update the original price table row after async fetch
 function updatePriceRow(price) {
   const row = document.getElementById('price-row');
@@ -457,21 +497,37 @@ function updatePriceRow(price) {
   }
 }
 
-// Render original price summary + year-by-year depreciation bar chart
-function displayPriceInfo(originalPrice, shnat_yitzur) {
+// Render original price summary + year-by-year bar chart.
+// yad2Data: {avg, median, count, min, max} for the manufacture-year cohort, or null for estimates only.
+function displayPriceInfo(originalPrice, shnat_yitzur, yad2Data) {
   const manufactureYear = parseInt(shnat_yitzur, 10);
   const currentYear = new Date().getFullYear();
-  const timeline = calculateDepreciationTimeline(originalPrice, manufactureYear, currentYear);
-  if (!timeline.length) return;
+  const estimated = calculateDepreciationTimeline(originalPrice, manufactureYear, currentYear);
+  if (!estimated.length) return;
+
+  // Apply Yad2 median to the current-year entry only (manufacture-year cohort price today)
+  const timeline = estimated.map(est => {
+    const marketPrice = (est.isCurrent && yad2Data) ? yad2Data.median : null;
+    const pctOfOriginal = marketPrice !== null
+      ? (marketPrice / originalPrice) * 100
+      : est.pctOfOriginal;
+    return {
+      year: est.year,
+      age: est.age,
+      isCurrent: est.isCurrent,
+      price: marketPrice ?? est.value,
+      pctOfOriginal,
+      isReal: marketPrice !== null,
+      listingCount: yad2Data?.count ?? 0
+    };
+  });
 
   const current = timeline[timeline.length - 1];
   const pctNow = Math.round(current.pctOfOriginal);
-  const estNow = current.value;
-  const ageYrs = current.age;
+  const hasRealData = yad2Data !== null;
 
   // Summary line
   const summaryEl = document.getElementById('price-summary');
-  const pctClass = pctNow >= 40 ? 'status-yellow' : 'status-red';
   summaryEl.textContent = '';
 
   const line1 = document.createElement('span');
@@ -480,13 +536,27 @@ function displayPriceInfo(originalPrice, shnat_yitzur) {
   summaryEl.appendChild(document.createElement('br'));
 
   const line2 = document.createElement('span');
-  line2.textContent = `Est. now (${currentYear}, ${ageYrs} yrs): ₪${estNow.toLocaleString()} `;
+  const sourceLabel = current.isReal ? `Market median (Yad2, ${current.listingCount} ads)` : `Est. (${current.age} yrs)`;
+  line2.textContent = `${sourceLabel}: ₪${Math.round(current.price).toLocaleString()} `;
   summaryEl.appendChild(line2);
 
   const pctSpan = document.createElement('span');
-  pctSpan.className = pctClass;
-  pctSpan.textContent = `(~${pctNow}% of original)`;
+  if (pctNow > 100) {
+    pctSpan.className = 'status-green';
+    pctSpan.textContent = `(+${pctNow - 100}% above original — mix of trims)`;
+  } else {
+    pctSpan.className = pctNow >= 40 ? 'status-yellow' : 'status-red';
+    pctSpan.textContent = `(${current.isReal ? '' : '~'}${pctNow}% of original)`;
+  }
   summaryEl.appendChild(pctSpan);
+
+  if (hasRealData) {
+    summaryEl.appendChild(document.createElement('br'));
+    const srcNote = document.createElement('span');
+    srcNote.className = 'status-dim';
+    srcNote.textContent = 'Prices: median asking price on Yad2';
+    summaryEl.appendChild(srcNote);
+  }
 
   // Bar chart — one row per year
   const chartEl = document.getElementById('price-chart');
@@ -494,7 +564,9 @@ function displayPriceInfo(originalPrice, shnat_yitzur) {
 
   timeline.forEach(entry => {
     const pct = Math.round(entry.pctOfOriginal);
-    const colorClass = pct >= 70 ? 'dep-high' : pct >= 40 ? 'dep-mid' : pct >= 20 ? 'dep-low' : 'dep-vlow';
+    const barPct = Math.min(pct, 100);
+    const colorClass = pct > 100 ? 'dep-high'
+      : pct >= 70 ? 'dep-high' : pct >= 40 ? 'dep-mid' : pct >= 20 ? 'dep-low' : 'dep-vlow';
 
     const row = document.createElement('div');
     row.className = entry.isCurrent ? 'dep-row dep-current' : 'dep-row';
@@ -507,21 +579,27 @@ function displayPriceInfo(originalPrice, shnat_yitzur) {
     track.className = 'dep-track';
     const fill = document.createElement('div');
     fill.className = `dep-fill ${colorClass}`;
-    fill.style.width = `${pct}%`;
+    fill.style.width = `${barPct}%`;
     track.appendChild(fill);
 
-    const pctSpan = document.createElement('span');
-    pctSpan.className = 'dep-pct';
-    pctSpan.textContent = `${pct}%`;
+    const pctEl = document.createElement('span');
+    pctEl.className = 'dep-pct';
+    pctEl.textContent = pct > 100 ? `+${pct - 100}%` : `${pct}%`;
 
-    const dropSpan = document.createElement('span');
-    dropSpan.className = 'dep-drop';
-    dropSpan.textContent = entry.age > 0 ? `-${Math.round(entry.annualDropPct)}%/yr` : 'new';
+    const noteEl = document.createElement('span');
+    noteEl.className = 'dep-drop';
+    if (entry.age === 0) {
+      noteEl.textContent = 'new';
+    } else if (entry.isReal) {
+      noteEl.textContent = `${entry.listingCount} ads`;
+    } else {
+      noteEl.textContent = 'est.';
+    }
 
     row.appendChild(yearSpan);
     row.appendChild(track);
-    row.appendChild(pctSpan);
-    row.appendChild(dropSpan);
+    row.appendChild(pctEl);
+    row.appendChild(noteEl);
     chartEl.appendChild(row);
   });
 

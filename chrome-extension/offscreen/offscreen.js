@@ -13,6 +13,10 @@ let inferencePromise = null; // serializes concurrent OCR requests
 // ─── Message entry point ──────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.action === 'warmupOcr') {
+    ensureModelLoaded().catch(() => {}); // fire-and-forget
+    return;
+  }
   if (message.action !== 'ocrRequest') return;
   runOcr(message.dataUrl)
     .then(text => sendResponse({ success: true, text }))

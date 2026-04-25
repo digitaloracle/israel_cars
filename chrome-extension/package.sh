@@ -33,6 +33,7 @@ files = [
     "utils/fetch-utils.js",
     "utils/offscreen-manager.js",
     "utils/price-utils.js",
+    "utils/yad2-utils.js",
     "lib/transformers.min.js",
     "lib/ort-wasm-simd-threaded.jsep.mjs",
     "lib/ort-wasm-simd-threaded.jsep.wasm",

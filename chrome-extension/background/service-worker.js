@@ -79,6 +79,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return;
   }
 
+  if (message.action === 'warmupOcr') {
+    cancelOffscreenCleanup();
+    ensureOffscreenDocument()
+      .then(() => chrome.runtime.sendMessage({ action: 'warmupOcr' }))
+      .catch(() => {});
+    return;
+  }
+
   if (message.action === 'startRegionSelection') {
     chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
       chrome.scripting.executeScript({
