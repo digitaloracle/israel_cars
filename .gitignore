@@ -8,8 +8,11 @@ __pycache__/
 *.log
 temp_response.json
 
+node_modules/
+
 # Chrome extension build artifacts
 chrome-extension/*.zip
+chrome-extension/lib/
 chrome-extension/screenshot-store.png
 chrome-extension/promo-tile-440x280.png
 chrome-extension/Screenshot*.png

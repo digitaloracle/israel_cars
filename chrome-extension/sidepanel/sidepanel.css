@@ -102,6 +102,50 @@ body {
   box-shadow: none;
 }
 
+/* Dealer Filter Section */
+.filter-section {
+  margin-bottom: 12px;
+}
+
+.dealer-filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: #f0ede8;
+  color: #7a7060;
+  border: 2px solid #e0dbd2;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dealer-filter-btn:hover {
+  background: #e8e3dc;
+  border-color: #c9c0b0;
+  color: #5a5040;
+}
+
+.dealer-filter-btn.active {
+  background: linear-gradient(135deg, #6aba8f, #5aaa7f);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(106, 186, 143, 0.4);
+}
+
+.dealer-filter-btn.active:hover {
+  background: linear-gradient(135deg, #5aaa7f, #4a9a6f);
+  box-shadow: 0 4px 12px rgba(106, 186, 143, 0.5);
+}
+
+.filter-icon {
+  font-size: 15px;
+}
+
 /* Image OCR Section */
 .image-section {
   margin-bottom: 12px;
@@ -532,6 +576,79 @@ body {
 
 #history-container .data-table td:last-child {
   text-align: left;
+}
+
+/* Price Depreciation */
+.price-summary {
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  background: #f8f7fc;
+  border-bottom: 1px solid #e2dff0;
+  color: #3b3854;
+}
+
+.dep-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+}
+
+.dep-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 38px 46px;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.dep-row.dep-current {
+  background: #ede9fe;
+  font-weight: 600;
+}
+
+.dep-year {
+  color: #9896b4;
+  font-variant-numeric: tabular-nums;
+}
+
+.dep-track {
+  height: 10px;
+  background: #e2dff0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.dep-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.dep-fill.dep-high  { background: #6aba8f; }
+.dep-fill.dep-mid   { background: #d4a843; }
+.dep-fill.dep-low   { background: #d4864a; }
+.dep-fill.dep-vlow  { background: #e07878; }
+
+.dep-pct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #3b3854;
+}
+
+.dep-drop {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #b8b5d0;
+  font-size: 10px;
+}
+
+.dep-row.dep-current .dep-year,
+.dep-row.dep-current .dep-drop {
+  color: #8b9cf4;
 }
 
 /* Scrollbar Styling */

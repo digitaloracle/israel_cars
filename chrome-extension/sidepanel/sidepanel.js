@@ -6,7 +6,8 @@ const BASE_URL = 'https://data.gov.il/api/3/action/datastore_search';
 const RESOURCE_IDS = {
   vehicle: '053cea08-09bc-40ec-8f7a-156f0677aff3',
   history: 'bb2355dc-9ec7-4f06-9c3f-3344672171da',
-  mileage: '56063a99-8a3e-4ff4-912e-5966c0279bad'
+  mileage: '56063a99-8a3e-4ff4-912e-5966c0279bad',
+  price:   '39f455bf-6db0-4926-859d-017f34eacbcb'
 };
 
 // Field name mappings (API field -> Display name)
@@ -61,6 +62,7 @@ const MAX_RECENT_SEARCHES = 5;
 let licensePlateInput, searchBtn, loadingEl, errorPanel, errorMessage;
 let notFoundPanel, notFoundMessage, resultsSection, vehicleTbody;
 let mileageLoading, historyContainer, historyTbody, historyLoading;
+let priceContainer;
 let recentSection, recentList;
 
 
@@ -83,6 +85,7 @@ function init() {
   historyContainer = document.getElementById('history-container');
   historyTbody = document.getElementById('history-tbody');
   historyLoading = document.getElementById('history-loading');
+  priceContainer = document.getElementById('price-container');
   recentSection = document.getElementById('recent-section');
   recentList = document.getElementById('recent-list');
 
@@ -90,6 +93,20 @@ function init() {
   searchBtn.addEventListener('click', handleSearch);
   licensePlateInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleSearch();
+  });
+
+  // Dealer filter toggle
+  const filterBtn = document.getElementById('dealer-filter-btn');
+  chrome.storage.local.get('dealerFilterEnabled', ({ dealerFilterEnabled }) => {
+    _setFilterBtn(filterBtn, !!dealerFilterEnabled);
+  });
+  filterBtn.addEventListener('click', () => {
+    chrome.storage.local.get('dealerFilterEnabled', ({ dealerFilterEnabled }) => {
+      const next = !dealerFilterEnabled;
+      chrome.storage.local.set({ dealerFilterEnabled: next });
+      _setFilterBtn(filterBtn, next);
+      chrome.runtime.sendMessage({ action: 'setDealerFilter', enabled: next });
+    });
   });
 
   // Region selector
@@ -111,6 +128,11 @@ function init() {
 
   // Load recent searches
   loadRecentSearches();
+}
+
+function _setFilterBtn(btn, enabled) {
+  btn.classList.toggle('active', enabled);
+  document.getElementById('dealer-filter-label').textContent = enabled ? 'Dealer ads hidden' : 'Hide dealer ads';
 }
 
 // --- Detection + OCR functions ---
@@ -219,6 +241,7 @@ function hideOcrStatus() {
 function startRegionSelection() {
   showOcrStatus('Drag over the license plate on the page…');
   chrome.runtime.sendMessage({ action: 'startRegionSelection' });
+  chrome.runtime.sendMessage({ action: 'warmupOcr' });
 }
 
 async function handleCropAndOcr(dataUrl, rect, dpr) {
@@ -250,7 +273,7 @@ async function handleCropAndOcr(dataUrl, rect, dpr) {
 // Handle search button click
 async function handleSearch() {
   const licensePlate = licensePlateInput.value.trim();
-  
+
   if (!licensePlate) {
     showError('Please enter a license plate number.');
     return;
@@ -262,22 +285,25 @@ async function handleSearch() {
   searchBtn.disabled = true;
 
   try {
-    // Fetch vehicle data first (required)
-    const vehicleData = await fetchVehicleData(licensePlate);
-    
+    // P1: use cached vehicle data if available (24-hour TTL)
+    const cached = await getCachedData(licensePlate);
+    const vehicleData = cached ?? await fetchVehicleData(licensePlate);
+
     if (!vehicleData) {
       showNotFound(licensePlate);
       return;
     }
 
+    if (!cached) await setCachedData(licensePlate, vehicleData);
+
     // Show vehicle data immediately
     showLoading(false);
     displayVehicleData(vehicleData);
-    
+
     // Save to recent searches
     saveRecentSearch(licensePlate);
 
-    // Fetch mileage and history in parallel (progressive loading)
+    // Fetch mileage and history in parallel — these are fast and unblock the UI immediately
     mileageLoading.style.display = 'flex';
     historyLoading.style.display = 'flex';
 
@@ -298,8 +324,44 @@ async function handleSearch() {
       displayOwnershipHistory(history);
     }
 
+    // Fetch original price then Yad2 market data in background (price API can be slow)
+    fetchNewPrice(vehicleData).then(newPrice => {
+      updatePriceRow(newPrice);
+      if (newPrice === null) return;
+      displayPriceInfo(newPrice, vehicleData.shnat_yitzur, null);
+      // Show loading hint while Yad2 data is in flight
+      const summaryEl = document.getElementById('price-summary');
+      const loadingNote = document.createElement('span');
+      loadingNote.id = 'yad2-loading-note';
+      loadingNote.className = 'status-dim';
+      loadingNote.textContent = ' · Fetching market prices…';
+      summaryEl.appendChild(loadingNote);
+
+      fetchYad2CurrentPrice(vehicleData).then(yad2Data => {
+        const note = document.getElementById('yad2-loading-note');
+        if (note) note.remove();
+        if (yad2Data) {
+          displayPriceInfo(newPrice, vehicleData.shnat_yitzur, yad2Data);
+        } else {
+          console.warn('[Yad2] returned null — model or manufacturer not found on Yad2');
+        }
+      }).catch(err => {
+        const note = document.getElementById('yad2-loading-note');
+        if (note) note.remove();
+        console.error('[Yad2] fetchYad2CurrentPrice failed:', err);
+      });
+    }).catch(err => {
+      console.error('Error fetching new price:', err);
+      updatePriceRow(null);
+    });
+
   } catch (error) {
-    showError(`Network error: ${error.message}`);
+    // P2: surface timeout errors with an actionable message
+    if (error.name === 'AbortError') {
+      showError('Request timed out — the government API is slow. Please try again.');
+    } else {
+      showError(`Network error: ${error.message}`);
+    }
   } finally {
     searchBtn.disabled = false;
     showLoading(false);
@@ -313,7 +375,8 @@ async function fetchVehicleData(licensePlate) {
   url.searchParams.set('q', licensePlate);
   url.searchParams.set('limit', '1');
 
-  const response = await fetch(url);
+  // P2: 10-second timeout, one automatic retry on network failure
+  const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
   const data = await response.json();
 
   if (!data.success) return null;
@@ -330,7 +393,7 @@ async function fetchMileageData(licensePlate) {
     url.searchParams.set('q', licensePlate);
     url.searchParams.set('limit', '1');
 
-    const response = await fetch(url);
+    const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
     const data = await response.json();
 
     if (!data.success) return null;
@@ -356,7 +419,7 @@ async function fetchOwnershipHistory(licensePlate) {
     url.searchParams.set('q', licensePlate);
     url.searchParams.set('limit', '100');
 
-    const response = await fetch(url);
+    const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
     const data = await response.json();
 
     if (!data.success) return null;
@@ -379,6 +442,170 @@ async function fetchOwnershipHistory(licensePlate) {
   }
 }
 
+// Fetch original new-car price from the MOT importers dataset
+async function fetchNewPrice(record) {
+  try {
+    const { tozeret_cd, degem_cd, shnat_yitzur } = record || {};
+    if (!tozeret_cd || !degem_cd || !shnat_yitzur) return null;
+
+    const url = new URL(BASE_URL);
+    url.searchParams.set('resource_id', RESOURCE_IDS.price);
+    url.searchParams.set('filters', JSON.stringify({ tozeret_cd, degem_cd, shnat_yitzur }));
+    url.searchParams.set('limit', '1');
+
+    const response = await fetchWithTimeoutAndRetry(url, 10000, 1);
+    const data = await response.json();
+
+    if (!data.success) return null;
+    const records = data.result?.records || [];
+    if (records.length === 0) return null;
+
+    const mehir = records[0].mehir;
+    return (mehir !== null && mehir !== undefined && mehir !== '') ? Number(mehir) : null;
+  } catch (error) {
+    console.error('Error fetching new price:', error);
+    return null;
+  }
+}
+
+// Fetch current market price from Yad2 for the vehicle's manufacture year.
+// e.g. a 2013 A3 → searches year=2013-2013 → what 2013 A3s sell for today.
+async function fetchYad2CurrentPrice(vehicleData) {
+  try {
+    const modelName = vehicleData.kinuy_mishari || vehicleData.degem_nm;
+    const ids = await fetchYad2Ids(vehicleData.tozeret_nm, modelName);
+    if (!ids || !ids.modelId) return null;
+
+    const year = parseInt(vehicleData.shnat_yitzur, 10);
+    return await fetchYad2MarketPriceForYear(ids.manufacturerId, ids.modelId, year);
+  } catch {
+    return null;
+  }
+}
+
+// Update the original price table row after async fetch
+function updatePriceRow(price) {
+  const row = document.getElementById('price-row');
+  if (!row) return;
+  const cell = row.querySelector('td:last-child');
+  if (price !== null) {
+    cell.textContent = `₪${Math.round(price).toLocaleString()}`;
+    cell.className = '';
+  } else {
+    cell.textContent = 'Not available';
+    cell.className = 'status-dim';
+  }
+}
+
+// Render original price summary + year-by-year bar chart.
+// yad2Data: {avg, median, count, min, max} for the manufacture-year cohort, or null for estimates only.
+function displayPriceInfo(originalPrice, shnat_yitzur, yad2Data) {
+  const manufactureYear = parseInt(shnat_yitzur, 10);
+  const currentYear = new Date().getFullYear();
+  const estimated = calculateDepreciationTimeline(originalPrice, manufactureYear, currentYear);
+  if (!estimated.length) return;
+
+  // Apply Yad2 median to the current-year entry only (manufacture-year cohort price today)
+  const timeline = estimated.map(est => {
+    const marketPrice = (est.isCurrent && yad2Data) ? yad2Data.median : null;
+    const pctOfOriginal = marketPrice !== null
+      ? (marketPrice / originalPrice) * 100
+      : est.pctOfOriginal;
+    return {
+      year: est.year,
+      age: est.age,
+      isCurrent: est.isCurrent,
+      price: marketPrice ?? est.value,
+      pctOfOriginal,
+      isReal: marketPrice !== null,
+      listingCount: yad2Data?.count ?? 0
+    };
+  });
+
+  const current = timeline[timeline.length - 1];
+  const pctNow = Math.round(current.pctOfOriginal);
+  const hasRealData = yad2Data !== null;
+
+  // Summary line
+  const summaryEl = document.getElementById('price-summary');
+  summaryEl.textContent = '';
+
+  const line1 = document.createElement('span');
+  line1.textContent = `New (${manufactureYear}): ₪${Math.round(originalPrice).toLocaleString()}`;
+  summaryEl.appendChild(line1);
+  summaryEl.appendChild(document.createElement('br'));
+
+  const line2 = document.createElement('span');
+  const sourceLabel = current.isReal ? `Market median (Yad2, ${current.listingCount} ads)` : `Est. (${current.age} yrs)`;
+  line2.textContent = `${sourceLabel}: ₪${Math.round(current.price).toLocaleString()} `;
+  summaryEl.appendChild(line2);
+
+  const pctSpan = document.createElement('span');
+  if (pctNow > 100) {
+    pctSpan.className = 'status-green';
+    pctSpan.textContent = `(+${pctNow - 100}% above original — mix of trims)`;
+  } else {
+    pctSpan.className = pctNow >= 40 ? 'status-yellow' : 'status-red';
+    pctSpan.textContent = `(${current.isReal ? '' : '~'}${pctNow}% of original)`;
+  }
+  summaryEl.appendChild(pctSpan);
+
+  if (hasRealData) {
+    summaryEl.appendChild(document.createElement('br'));
+    const srcNote = document.createElement('span');
+    srcNote.className = 'status-dim';
+    srcNote.textContent = 'Prices: median asking price on Yad2';
+    summaryEl.appendChild(srcNote);
+  }
+
+  // Bar chart — one row per year
+  const chartEl = document.getElementById('price-chart');
+  chartEl.textContent = '';
+
+  timeline.forEach(entry => {
+    const pct = Math.round(entry.pctOfOriginal);
+    const barPct = Math.min(pct, 100);
+    const colorClass = pct > 100 ? 'dep-high'
+      : pct >= 70 ? 'dep-high' : pct >= 40 ? 'dep-mid' : pct >= 20 ? 'dep-low' : 'dep-vlow';
+
+    const row = document.createElement('div');
+    row.className = entry.isCurrent ? 'dep-row dep-current' : 'dep-row';
+
+    const yearSpan = document.createElement('span');
+    yearSpan.className = 'dep-year';
+    yearSpan.textContent = entry.year;
+
+    const track = document.createElement('div');
+    track.className = 'dep-track';
+    const fill = document.createElement('div');
+    fill.className = `dep-fill ${colorClass}`;
+    fill.style.width = `${barPct}%`;
+    track.appendChild(fill);
+
+    const pctEl = document.createElement('span');
+    pctEl.className = 'dep-pct';
+    pctEl.textContent = pct > 100 ? `+${pct - 100}%` : `${pct}%`;
+
+    const noteEl = document.createElement('span');
+    noteEl.className = 'dep-drop';
+    if (entry.age === 0) {
+      noteEl.textContent = 'new';
+    } else if (entry.isReal) {
+      noteEl.textContent = `${entry.listingCount} ads`;
+    } else {
+      noteEl.textContent = 'est.';
+    }
+
+    row.appendChild(yearSpan);
+    row.appendChild(track);
+    row.appendChild(pctEl);
+    row.appendChild(noteEl);
+    chartEl.appendChild(row);
+  });
+
+  priceContainer.style.display = 'block';
+}
+
 // Display vehicle data in table
 function displayVehicleData(record) {
   vehicleTbody.innerHTML = '';
@@ -391,6 +618,18 @@ function displayVehicleData(record) {
     <td class="status-dim">Loading...</td>
   `;
   vehicleTbody.appendChild(mileageRow);
+
+  // Add original price placeholder row
+  const priceRow = document.createElement('tr');
+  priceRow.id = 'price-row';
+  const priceLabelTd = document.createElement('td');
+  priceLabelTd.textContent = 'Original New Price';
+  const priceValueTd = document.createElement('td');
+  priceValueTd.className = 'status-dim';
+  priceValueTd.textContent = 'Loading...';
+  priceRow.appendChild(priceLabelTd);
+  priceRow.appendChild(priceValueTd);
+  vehicleTbody.appendChild(priceRow);
 
   // Add vehicle fields
   for (const fieldKey of FIELD_ORDER) {
@@ -582,6 +821,7 @@ function hideAllPanels() {
   notFoundPanel.style.display = 'none';
   resultsSection.style.display = 'none';
   historyContainer.style.display = 'none';
+  priceContainer.style.display = 'none';
   mileageLoading.style.display = 'none';
   historyLoading.style.display = 'none';
 }
